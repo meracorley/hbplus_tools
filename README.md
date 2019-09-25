@@ -1,7 +1,7 @@
-# This process_hb2.py was written to process the information in .hb2 files.
-# .hb2 files are generated with HBPLUS analysis of hydrogen bonds in PDB files.
-# Acquire HBPLUS here: https://www.ebi.ac.uk/thornton-srv/software/HBPLUS/ 
-# Generate .hb2 file like so:
+ process_hb2.py was written to process the information in .hb2 files.
+ .hb2 files are generated with HBPLUS analysis of hydrogen bonds in PDB files.
+ Acquire HBPLUS here: https://www.ebi.ac.uk/thornton-srv/software/HBPLUS/ 
+ Generate .hb2 file like so:
 $ echo file.pdb | clean 
 $ hbplus -d 3.5 -h 2.7 file.new file.pdb
 
