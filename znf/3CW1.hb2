@@ -1,0 +1,8 @@
+HBPLUS Hydrogen Bond Calculator v 3.2            May 24 17:30:23 PDT 2019
+(c) I McDonald, D Naylor, D Jones and J Thornton 1993 All Rights Reserved.
+Citing HBPLUS in publications that use these results is condition of use.
+3CW1 <- Brookhaven Code "3CW1.new" <- PDB file
+<---DONOR---> <-ACCEPTOR-->    atom                        ^               
+c    i                          cat <-CA-CA->   ^        H-A-AA   ^      H- 
+h    n   atom  resd res      DA  || num        DHA   H-A  angle D-A-AA Bond
+n    s   type  num  typ     dist DA aas  dist angle  dist       angle   num

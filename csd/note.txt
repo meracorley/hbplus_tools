@@ -1,0 +1,4 @@
+4QQB.hb2 has had any reference to chains A and B removed, since these chains are RRMs, not CSDs.
+Chains X and C are the CSDs.
+The RRMs are the larger chains with more RNA contacts, so they are automatically selected with the -P option in
+interactionsPerProtein() function.
