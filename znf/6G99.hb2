@@ -1,0 +1,42 @@
+HBPLUS Hydrogen Bond Calculator v 3.2            Nov 04 15:51:31 PST 2019
+(c) I McDonald, D Naylor, D Jones and J Thornton 1993 All Rights Reserved.
+Citing HBPLUS in publications that use these results is condition of use.
+6G99 <- Brookhaven Code "6G99.pdb" <- PDB file
+<---DONOR---> <-ACCEPTOR-->    atom                        ^               
+c    i                          cat <-CA-CA->   ^        H-A-AA   ^      H- 
+h    n   atom  resd res      DA  || num        DHA   H-A  angle D-A-AA Bond
+n    s   type  num  typ     dist DA aas  dist angle  dist       angle   num
+B0422-ARG NH2 B0420-GLN OE1 2.84 SS   2  6.86 166.0  1.85 143.3 148.0     1
+B0422-ARG N   B0425-ASP OD2 2.80 MS   3  5.74 149.0  1.88 119.0 120.6     2
+B0425-ASP N   B0422-ARG O   3.12 MM   3  5.74 159.3  2.16 137.6 140.8     3
+B0439-SER N   B0425-ASP OD1 3.08 MS  14  4.00 119.5  2.45 144.5 135.6     4
+A0002-  G N2  B0425-ASP OD2 2.71 HS  -2 -1.00 156.3  1.77 145.3 136.8     5
+B0426-TRP N   B0437-ASN O   3.13 MM  11  5.39 174.4  2.12 153.3 155.1     6
+B0437-ASN N   B0426-TRP O   2.80 MM  11  5.39 150.6  1.88 148.1 158.2     7
+B0426-TRP NE1 B0438-PHE O   3.15 SM  12  6.56 115.3  2.59 154.9 142.4     8
+B0426-TRP NE1 B0441-ARG O   3.03 SM  15  8.72 134.9  2.24 120.0 124.9     9
+B0428-CYS N   B0435-ASN O   2.79 MM   7  5.20 163.7  1.81 156.9 162.5    10
+B0433-CYS N   B0430-ASN O   3.01 MM   3  5.00 157.0  2.06 108.0 112.3    11
+B0434-GLU N   B0430-ASN O   2.98 MM   4  5.92 142.0  2.12 157.4 167.0    12
+B0435-ASN ND2 B0437-ASN OD1 3.18 SS   2  6.32 128.3  2.46 138.4 135.1    13
+B0435-ASN ND2 A0004-  U O4  2.90 SH  -2 -1.00 158.7  1.94 136.4 133.1    14
+A0003-  G N2  B0436-MET O   3.05 HM  -2 -1.00 131.5  2.30 115.6 129.1    15
+B0445-ASN N   B0437-ASN OD1 3.11 MS   8  6.48 151.2  2.19 130.1 128.6    16
+B0438-PHE N   A0003-  G O6  2.87 MH  -2 -1.00 160.8  1.90 118.4 114.3    17
+B0441-ARG N   B0438-PHE O   3.11 MM   3  5.57 154.2  2.17 112.4 120.4    18
+B0439-SER N   A0002-  G O6  2.82 MH  -2 -1.00 154.1  1.88 130.1 134.5    19
+B0440-TRP NE1 A0002-  G N7  3.00 SH  -2 -1.00 144.1  2.13 126.4 116.1    20
+B0451-LYS NZ  B0441-ARG O   3.14 SM  10  7.81 121.3  2.50 136.2 146.5    21
+B0441-ARG NE  A0003-  G N7  3.32 SH  -2 -1.00 141.6  2.48 165.9  98.9    22
+B0441-ARG NE  A0003-  G O6  2.79 SH  -2 -1.00 124.9  2.09 106.5 121.3    23
+B0441-ARG NH2 A0003-  G N7  2.99 SH  -2 -1.00 157.0  2.03 144.8 114.0    24
+B0451-LYS N   B0442-ASN O   2.96 MM   9  5.20 160.9  1.99 138.0 133.1    25
+B0451-LYS NZ  B0442-ASN OD1 3.25 SS   9  5.20 114.3  2.70 157.6 154.7    26
+B0444-CYS N   B0449-ALA O   2.72 MM   5  4.90 141.4  1.86 132.7 146.1    27
+B0446-GLN N   B0444-CYS SG  3.33 MS   2  5.39 155.4  2.38 129.7 102.8    28
+B0445-ASN ND2 A0004-  U O4  2.98 SH  -2 -1.00 153.3  2.04 121.6 119.1    29
+A0001-  U O2' A0003-  G OP2 2.81 HH  -2 -1.00 155.7  1.87 147.6 144.9    30
+A0002-  G O2' A0003-  G O5' 2.83 HH  -2 -1.00 145.2  1.95 134.6  97.4    31
+A0005-  G N2  A0003-  G O4' 2.91 HH  -2 -1.00 151.0  1.99 106.6  95.9    32
+A0003-  G N2  A0005-  G O6  2.83 HH  -2 -1.00 170.2  1.84 130.3 133.5    33
+A0005-  G N2  A0004-  U OP1 2.99 HH  -2 -1.00 143.7  2.12  99.9  92.4    34

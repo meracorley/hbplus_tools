@@ -9,6 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 import operator
+from scipy import stats as scipystats
+import copy
 
 def getChainsFromPDB2(pdbfile): #returns dict containing info about each chain in PDB file
     #more correct handling of hetatms in chain
@@ -625,7 +627,7 @@ def domainStats(domaintype,metric,dadist=10,notrnabound=False):
     return allstats #,np.mean(allstats[:,6]),np.mean(allstats[:,7]))
 
 def writeToFile(array,filename):
-    if len(stats)==0 or len(filename)==0:
+    if len(array)==0 or len(filename)==0:
         return
     outfile = open(filename,'w')
     for line in array:
@@ -644,9 +646,47 @@ def violinPlotByDomain(allStats): #for plotting -S pr summary stats as a violin 
     colors = ["#c3d21eff","#44a5d8ff","#40a0a0ff","#296399ff","#b39e9eff","#d89a44ff","#a04094ff","#f4570bff"]
     metrics = ["Number of Protein Hbonds","Number of Interacting Residues","Number of RNA Hbonds","Number of Interacting bases"
                ,"% Hbonds with RNA Backbone","% Hbonds with RNA Sugar","% Hbonds with RNA Base", "% Hbonds with Protein Sidechain"]
+    maxpdbs = 0
+    for domaintype in types:
+        pdbcount = len([f for f in os.listdir(domaintype) if f.endswith('.pdb')])
+        if pdbcount>maxpdbs: #count which domain has the most pdb files to process
+            maxpdbs = pdbcount
+            
+    if TTEST: #t-test every domain against all others, one domain per row, one metric per column
+        allTtests = np.zeros((len(types)+1,len(metrics)),dtype='object') #nxn matrix of ttest results
+        allTtests.fill(np.nan)
+        allTtests[0] = metrics
+        counter = 0
+        for domain in types:
+            counter+=1
+            Ns = np.count_nonzero(np.isfinite(allStats[domain]),axis=0)
+            var = np.nanvar(allStats[domain],axis=0,ddof=1)
+            varOverN = var/Ns
+            sqrdSums = var*(Ns-1)
+            mean = np.nanmean(allStats[domain],axis=0)
 
+            b = []
+            for domain2 in types:
+                if domain2!=domain and len(b)==0:
+                    b = copy.deepcopy(allStats[domain2])
+                elif domain2!=domain:
+                    b = np.append(b,allStats[domain2],axis=0)
+            bNs = np.count_nonzero(np.isfinite(b),axis=0)
+            bvar = np.nanvar(b,axis=0,ddof=1)
+            bvarOverN = bvar/bNs
+            bsqrdSums = bvar*(bNs-1)
+            bmean = np.nanmean(b,axis=0)
+
+            for i in range(len(metrics)):
+                    df = (varOverN[i]+bvarOverN[i])**2/(varOverN[i]**2/(Ns[i]-1)+bvarOverN[i]**2/(bNs[i]-1))
+                    s2 = (sqrdSums[i]+bsqrdSums[i])/(Ns[i]+bNs[i]-2)
+                    t = (mean[i]-bmean[i])/(s2*(1/Ns[i]+1/bNs[i]))**0.5
+                    p = 1 - scipystats.t.cdf(abs(t),df=df)
+                    allTtests[counter][i] = str(2*p)+"_"+domain #two-tailed t-test, multiply pval by 2
+        writeToFile(allTtests, "pr.ttests.txt")  
+            
     for metric in range(0,8):
-        allBase = np.zeros(((44,8)),dtype='float') #at most 44 pdb files, 8 domain types
+        allBase = np.zeros((maxpdbs,len(types)),dtype='float') #at most maxpdbs pdb files, 8 domain types
         allBase.fill(np.nan)
         colN = 0
         for domain in types:
@@ -655,16 +695,37 @@ def violinPlotByDomain(allStats): #for plotting -S pr summary stats as a violin 
                 allBase[i][colN] = thisstats[i][metric]
             #allBase[0:len(thisstats[:,0]),colN] = thisstats[:,0]
             colN+=1
+        #calculate means and sd of each column (domain) if TTEST = True
+        '''
+        if TTEST: #pairwise t-tests comparing ave of each domain to ave of each other domain
+            Ns = np.count_nonzero(np.isfinite(allBase),axis=0)
+            var = np.nanvar(allBase,axis=0,ddof=1)
+            varOverN = var/Ns
+            sqrdSums = var*(Ns-1)
+            mean = np.nanmean(allBase,axis=0)
+            #t-test every pairwise domain comparison
+            allTtests = np.zeros((len(types),len(types)),dtype='object') #nxn matrix of ttest results
+            allTtests.fill(np.nan)
+            for i in range(0,len(types)):
+                for j in range(i+1,len(types)):
+                    df = (varOverN[i]+varOverN[j])**2/(varOverN[i]**2/(Ns[i]-1)+varOverN[j]**2/(Ns[j]-1))
+                    s2 = (sqrdSums[i]+sqrdSums[j])/(Ns[i]+Ns[j]-2)
+                    t = (mean[i]-mean[j])/(s2*(1/Ns[i]+1/Ns[j]))**0.5
+                    p = 1 - scipystats.t.cdf(abs(t),df=df)
+                    allTtests[i,j] = str(2*p)+"_"+names[i]+"_"+names[j] #two-tailed t-test, multiply pval by 2
+            writeToFile(allTtests, metrics[metric].replace(" ","_")+"pairwise.ttests.txt")
+        '''
+        #PLOT 
         allBase = pd.DataFrame(allBase, columns=names)
         #plot stripcharts/violinplots for each domain
         #sns.set(font_scale=.25)
         sns.set_style('ticks')
         #put alldatasets together, each domain in one column
-        #plot = sns.stripplot(data=allBase, jitter=True, palette="Blues")
-        plot = sns.violinplot(data=allBase, inner=None, palette=colors) #inner='point'
+        plot = sns.violinplot(data=allBase, inner="box", palette=colors) #inner='point'
         plot = sns.stripplot(data=allBase, color="black", jitter=True)
         plot.set_ylabel(metrics[metric], size="small")
-        plot.set_xlabel("RBP domains", size="small", rotation=45)
+        plot.set_xticklabels(plot.get_xticklabels(), rotation=45)
+        plot.set_xlabel("RBP domains", size="small")
         means = np.mean(allBase)
         top = np.max(np.max(allBase))
         for i in range(0,len(means)):
@@ -685,22 +746,57 @@ def plotSummaryStats(metric,domainValues): #for plotting AA or base summary stat
     else:
         statlist = ["ALA","ARG","ASN","ASP","CYS","GLU","GLN","GLY","HIS","ILE",
                     "LEU","LYS","MET","PHE","PRO","SER","THR","TRP","TYR","VAL"]
+        statlist = ["A","R","N","D","C","E","Q","G","H","I",
+                    "L","K","M","F","P","S","T","W","Y","V"]
         xlab="Amino Acid"
         xlabAngle = 45
         outname = "_aa_summary.pdf"
         ymax = 80
         textPlace = [0,70]
-        
     domainNames = {'kh':"KH",'dsRBD':"dsRBD",'rrm':"RRM",'znf':"ZnF",'puf':"PUF",'dead':"DEAD",'yth':"YTH",'csd':"CSD"}
     domainColors = {'kh': "#c3d21eff",'dsRBD':"#44a5d8ff",'rrm':"#40a0a0ff","znf":"#296399ff",
                     'puf': "#b39e9eff",'dead':"#d89a44ff",'yth':"#a04094ff","csd":"#f4570bff"}
+    
+    allTtests = np.zeros((len(domainNames),len(statlist)),dtype='object') #nxn matrix of ttest results
+    allTtests.fill(np.nan)
+    counter=-1
     for domain in domainNames:
+        counter+=1
+        #TTEST comparing each domains ave to every other domain for each base or aa
+        if TTEST:
+            Ns = np.count_nonzero(np.isfinite(domainValues[domain]),axis=0)
+            var = np.nanvar(domainValues[domain],axis=0,ddof=1)
+            varOverN = var/Ns
+            sqrdSums = var*(Ns-1)
+            mean = np.nanmean(domainValues[domain],axis=0)
+
+            #means/var of all other domains at each base/aa
+            b = []
+            for domain2 in domainNames:
+                if domain2!=domain and len(b)==0:
+                    b = copy.deepcopy(domainValues[domain2])
+                elif domain2!=domain:
+                    b = np.append(b,domainValues[domain2],axis=0)
+            bNs = np.count_nonzero(np.isfinite(b),axis=0)
+            bvar = np.nanvar(b,axis=0,ddof=1)
+            bvarOverN = bvar/bNs
+            bsqrdSums = bvar*(bNs-1)
+            bmean = np.nanmean(b,axis=0)
+                          
+            for i in range(len(statlist)):
+                    df = (varOverN[i]+bvarOverN[i])**2/(varOverN[i]**2/(Ns[i]-1)+bvarOverN[i]**2/(bNs[i]-1))
+                    s2 = (sqrdSums[i]+bsqrdSums[i])/(Ns[i]+bNs[i]-2)
+                    t = (mean[i]-bmean[i])/(s2*(1/Ns[i]+1/bNs[i]))**0.5
+                    p = 1 - scipystats.t.cdf(abs(t),df=df)
+                    allTtests[counter][i] = str(2*p)+"_"+domain+"_"+statlist[i] #two-tailed t-test, multiply pval by 2
+            writeToFile(allTtests, metric+".ttests.txt")
+
         plt.clf()
         plt.ylim(0,ymax)
         for sample in domainValues[domain]:
             plt.plot(sample,'-',color=domainColors[domain])
         plt.plot(np.nanmean(domainValues[domain],axis=0),'--',color='black')
-        plt.xticks(np.arange(len(statlist)), statlist, rotation=xlabAngle)
+        plt.xticks(np.arange(len(statlist)), statlist, rotation=0)
         plt.xlabel(xlab,size="large")
         plt.ylabel("% Frequency in RNA interactions",size="large")
         plt.annotate(domainNames[domain],textPlace,weight="bold",size="large")
@@ -708,8 +804,19 @@ def plotSummaryStats(metric,domainValues): #for plotting AA or base summary stat
         
     #Now plotting each domain's average in one plot:
     plt.clf()
+    b = np.zeros((len(domainNames),len(statlist)),dtype='float') #overall average
+    counter=-1
     for domain in domainNames:
+        counter+=1
+        b[counter] = np.nanmean(domainValues[domain],axis=0)
         plt.plot(np.nanmean(domainValues[domain],axis=0),'--',color=domainColors[domain])
+    statlist = ["ALA","ARG","ASN","ASP","CYS","GLU","GLN","GLY","HIS","ILE",
+                    "LEU","LYS","MET","PHE","PRO","SER","THR","TRP","TYR","VAL"]
+    if metric=="b":
+        statlist = ["A","C","U","G"]
+        plt.plot([28.9,16.5,34.3,20.2],'--',color='black') #percent of each base in sequence motifs from
+        #dominquez et al, Mol Cell, 2018
+        print(np.corrcoef(np.array([28.9,16.5,34.3,20.2]),np.nanmean(b,axis=0)))
     plt.xticks(np.arange(len(statlist)), statlist, rotation=xlabAngle)
     plt.xlabel(xlab,size="large")
     plt.ylabel("% Frequency in RNA interactions",size="large")
@@ -723,7 +830,11 @@ def plotSummaryStats(metric,domainValues): #for plotting AA or base summary stat
                     Line2D([0], [0], color="#d89a44ff", lw=4),
                     Line2D([0], [0], color="#a04094ff", lw=4),
                     Line2D([0], [0], color="#f4570bff", lw=4)]
-    plt.legend(custom_lines, ['KH','dsRBD','RRM','ZnF','PUF','DEAD','YTH','CSD'])
+    if metric=="b":
+        custom_lines.append(Line2D([0], [0], color="#000000", lw=4))
+        plt.legend(custom_lines, ['KH','dsRBD','RRM','ZnF','PUF','DEAD','YTH','CSD','Dominguez'])
+    else:
+        plt.legend(custom_lines,['KH','dsRBD','RRM','ZnF','PUF','DEAD','YTH','CSD'])
     plt.savefig("all"+ outname)
 
 def usage():
@@ -751,6 +862,8 @@ def usage():
 
              -S, --summary   [Default] Summary statistics--protein-RNA (pr), amino acids (aa), or bases (b)--by domain type.
                              Based on provided PDB files categorized by domain (RRM, KH, dsRBD, ZnF, YTH, PUF, DEAD, CSD).
+                             
+             -t, --ttest     Perform t-tests between all domains for the summary=pr option.
 
           ''')
 
@@ -764,6 +877,7 @@ if __name__ == "__main__":
     OUTPUT = "hb2_statistics.txt"
     HBOND = False
     DADIST = 10
+    TTEST = False
     
     argv = sys.argv[1:] #grabs all the arguments
     if len(argv)==0:
@@ -772,8 +886,9 @@ if __name__ == "__main__":
     initialArgLen = len(argv)
     #print(argv)
     try:
-        opts, args = getopt.getopt(argv, "hi:p:d:o:P:RHS:", ["help","input=", 
-                                                           "pdb=", "dadist=","output=","protein=","RNA","hbonds","summary="])
+        opts, args = getopt.getopt(argv, "hi:p:d:o:P:RHS:t", ["help","input=", 
+                                                             "pdb=", "dadist=","output=","protein=","RNA",
+                                                             "hbonds","summary=","ttest"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -822,6 +937,9 @@ if __name__ == "__main__":
             if SUMMARY!="pr" and SUMMARY!="aa" and SUMMARY!="b":
                 print("-S option must be one of: pr | aa | b")
                 sys.exit()
+        elif opt in ("-t", "--ttest"):
+            TTEST = True
+            
     if len(args)>0 and len(args)<initialArgLen:
         print("WARNING: Unused options", args)
     
@@ -838,7 +956,6 @@ if __name__ == "__main__":
     ########END OPTIONS
         
     #Analysis done based on whether P, R, or S is True
-
     stats = []
     if RNA:
         stats = interactionsPerBase(HB2,PDB,DADIST)
